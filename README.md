@@ -264,3 +264,88 @@ pnpm i -D npm-run-all
   "validate": "npm-run-all --parallel check-types check-format lint build"
 }
 ```
+
+## Mocking
+
+**Mocking** is a general idea of erasing the actual implementation of a function that's doing something like a payment request and making your tests more determinstic.
+
+```js
+test('returns winner', () => {
+  let originalGetWinner = utils.getWinner
+
+  // monkey patching `getWinner`
+  utils.getWinner = (p1, p2) => p1
+
+  let winner = thumbWar('React', 'Svelte')
+
+  expect(winner).toBe('React')
+
+  // cleanup after yourself to not impact other tests
+  utils.getWinner = originalGetWinner
+})
+```
+
+You could break the implementation but your test wouldn't catch that.
+
+You can use the `jest.fn` mock function instead to catch the mistake.
+
+```js
+// breaking the implementation
+let winner = utils.getWinner(player1)
+```
+
+```js
+test('returns winner', () => {
+  let originalGetWinner = utils.getWinner
+
+  utils.getWinner = jest.fn((p1, p2) => p1)
+
+  let winner = thumbWar('React', 'Svelte')
+
+  expect(winner).toBe('React')
+  expect(utils.getWinner).toHaveBeenCalledTimes(2)
+  expect(utils.getWinner).toHaveBeenCalledWith('React', 'Svelte')
+  expect(utils.getWinner).toHaveBeenNthCalledWith(1, 'React', 'Svelte')
+  expect(utils.getWinner).toHaveBeenNthCalledWith(2, 'React', 'Svelte')
+
+  utils.getWinner = originalGetWinner
+})
+```
+
+You can use `jest.mock` to mock an entire module because **Jest** is in control of the whole module system.
+
+```js
+jest.mock('../utils', () => {
+  return {
+    getWinner: jest.fn((p1, p2) => p1),
+  }
+})
+
+test('returns winner', () => {
+  let winner = thumbWar('React', 'Svelte')
+
+  expect(winner).toBe('React')
+  expect(utils.getWinner.mock.calls).toEqual([
+    ['React', 'Svelte'],
+    ['React', 'Svelte'],
+  ])
+
+  utils.getWinner.mockReset()
+})
+```
+
+You can place your mocks in a `__mocks__` directory if you're going to use it in multiple files.
+
+```js
+// __mocks__/utils.js
+module.exports = {
+  getWinner: jest.fn((p1, p2) => p1),
+}
+```
+
+```js
+// __tests__/mock.test.js
+jest.mock('../utils')
+```
+
+**Jest** is going to pick up the mock file.
