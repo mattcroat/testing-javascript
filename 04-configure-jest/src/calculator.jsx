@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import CalculatorDisplay from './shared/calculator-display'
 
 import styles from './calculator.module.css'
-console.log(styles)
+
 function CalculatorKey({ className = '', ...props }) {
   return (
     <button className={`${styles.calculatorKey} ${className}`} {...props} />
