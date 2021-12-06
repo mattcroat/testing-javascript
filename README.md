@@ -349,3 +349,152 @@ jest.mock('../utils')
 ```
 
 **Jest** is going to pick up the mock file.
+
+## Configure Jest
+
+```shell
+npm i -D jest babel-jest @babel/core @babel/preset-env
+```
+
+**Jest** picks up the **Babel** config automatically.
+
+```js
+// babel.config.js
+module.exports = {
+  presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
+}
+```
+
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "validate": "npm run lint && npm run test && npm run build"
+  }
+}
+```
+
+You can simulate the browser environment in **Node** using `jsdom`.
+
+```js
+// jest.config.js
+module.exports = {
+  testEnvironment: 'jsdom',
+}
+```
+
+You can use `@test-library` to test components.
+
+```shell
+npm i -D @test-library/react
+```
+
+Use `debug` from `@testing-library` to see the HTML output.
+
+```js
+import { render } from '@testing-library/react'
+
+import Component from './Component'
+
+test('renders', () => {
+  let { debug } = render(<AutoScalingText />)
+  debug()
+})
+```
+
+**Snapshot** tests return a serialized value of your tree and store a snapshot that can be compared on subsequent test runs to catch unexpected changes.
+
+```js
+test('returns super heros that can fly', () => {
+  let flyingHeros = getFlyingSuperHeros()
+  expect(flyingHeros).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "name": "Dynaguy",
+    "powers": Array [
+      "disintegration ray",
+      "fly",
+    ],
+  },
+  Object {
+    "name": "Apogee",
+    "powers": Array [
+      "gravity control",
+      "fly",
+    ],
+  },
+  Object {
+    "name": "Jack-Jack",
+    "powers": Array [
+      "shapeshifting",
+      "fly",
+    ],
+  },
+]
+`)
+```
+
+You can run `npm test -- -u` or `jest -u` to update snapshots.
+
+```js
+test('renders', () => {
+  let { container } = render(<Component />)
+  expect(container).toMatchInlineSnapshot()
+})
+```
+
+You can use `@testing-library/jest-dom` to add some nice assertions for you.
+
+```js
+import { fireEvent, render } from '@testing-library/react'
+import '@testing-library/jest-dom/extend-expect'
+
+import Calculator from '../calculator'
+
+test('the clear button switches from AC to C when there is an entry', () => {
+  let { getByText } = render(<Calculator />)
+  let clearButton = getByText('AC')
+
+  fireEvent.click(getByText(/3/))
+  expect(clearButton).toHaveTextContent('C')
+
+  fireEvent.click(clearButton)
+  expect(clearButton).toHaveTextContent('AC')
+})
+```
+
+You could have it run before any of your tests.
+
+```js
+// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: ['@testing-library/jest-dom/extend-expect'],
+}
+```
+
+Use `jest --watch` to watch for changes.
+
+```json
+{
+  "scripts": {
+    "test:watch": "jest --watch"
+  }
+}
+```
+
+**Code coverage** helps show how much of your project is tested and where you could use help adding new tests.
+
+```json
+{
+  "scripts": {
+    "test": "jest --coverage"
+  }
+}
+```
+
+```js
+// jest.config.js
+module.exports = {
+  collectCoverageFrom: ['**/src/**/*.jsx'],
+}
+```
