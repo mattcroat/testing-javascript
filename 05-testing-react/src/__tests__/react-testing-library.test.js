@@ -1,0 +1,10 @@
+import React from 'react'
+import { render } from '@testing-library/react'
+
+import { FavoriteNumber } from '../favorite-number'
+
+test('render a number input with a label "Favorite Number"', () => {
+  let { getByLabelText } = render(<FavoriteNumber />)
+  let input = getByLabelText(/favorite number/i)
+  expect(input).toHaveAttribute('type', 'number')
+})
