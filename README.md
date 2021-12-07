@@ -498,3 +498,229 @@ module.exports = {
   collectCoverageFrom: ['**/src/**/*.jsx'],
 }
 ```
+
+## Testing React
+
+```js
+test('render a number input with a label "Favorite Number"', () => {
+  let div = document.createElement('div')
+  ReactDOM.render(<FavoriteNumber />, div)
+  expect(div.querySelector('input').type).toBe('number')
+  expect(div.querySelector('label').textContent).toBe('Favorite Number')
+})
+```
+
+Use `@testing-library/jest-dom` for testing assertions on the DOM.
+
+```shell
+npm i -D @testing-library/jest-dom
+```
+
+```js
+// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: ['@testing-library/jest-dom/extend-expect'],
+}
+```
+
+```js
+import { render } from '@testing-library/react'
+
+test('render a number input with a label "Favorite Number"', () => {
+  let { getByLabelText } = render(<FavoriteNumber />)
+  let input = getByLabelText(/favorite number/i)
+  expect(input).toHaveAttribute('type', 'number')
+})
+```
+
+Use `debug` to get a view of your DOM or look at a specific DOM node. It defaults to the container.
+
+```js
+test('render a number input with a label "Favorite Number"', () => {
+  let { getByLabelText, debug } = render(<FavoriteNumber />)
+  debug()
+
+  let input = getByLabelText(/favorite number/i)
+  expect(input).toHaveAttribute('type', 'number')
+  debug(input)
+})
+```
+
+Use `fireEvent` to fire event listeners.
+
+```js
+import { fireEvent, render } from '@testing-library/react'
+
+test('entering an invalid value shows an error message', () => {
+  let { getByLabelText, getByRole } = render(<FavoriteNumber />)
+  let input = getByLabelText(/favorite number/i)
+
+  fireEvent.change(input, { target: { value: '10' } })
+
+  expect(getByRole('alert')).toHaveTextContent(/the number is invalid/i)
+})
+```
+
+You can improve your test confidence with `@testing-library/user-event` to resemble more how your user would use your software.
+
+```js
+import { render } from '@testing-library/react'
+import user from '@testing-library/user-event'
+
+test('entering an invalid value shows an error message', () => {
+  let { getByLabelText, getByRole } = render(<FavoriteNumber />)
+  let input = getByLabelText(/favorite number/i)
+
+  user.type(input, '10')
+
+  expect(getByRole('alert')).toHaveTextContent(/the number is invalid/i)
+})
+```
+
+If you need to rerender a component with new props use `rerender`.
+
+```js
+import { render } from '@testing-library/react'
+import user from '@testing-library/user-event'
+
+test('entering an invalid value shows an error message', () => {
+  let { getByLabelText, getByRole, rerender } = render(<FavoriteNumber />)
+  let input = getByLabelText(/favorite number/i)
+  user.type(input, '10')
+  expect(getByRole('alert')).toHaveTextContent(/the number is invalid/i)
+
+  rerender(<FavoriteNumber max={10} />)
+})
+```
+
+Any `get` query prefix is going to throw an element if it's not matching but if that's your intended outcome use the `query` prefix instead to verify an element is not being rendered.
+
+```js
+test('entering an invalid value shows an error message', () => {
+  let { getByLabelText, getByRole, queryByRole, rerender } = render(
+    <FavoriteNumber />
+  )
+
+  let input = getByLabelText(/favorite number/i)
+  user.type(input, '10')
+  expect(getByRole('alert')).toHaveTextContent(/the number is invalid/i)
+
+  rerender(<FavoriteNumber max={10} />)
+  expect(queryByRole('alert')).toBeNull()
+})
+```
+
+You can use `jest-axe` to help with accessibility testing.
+
+```shell
+npm i -D jest-axe
+```
+
+```js
+import { render } from '@testing-library/react'
+import { axe } from 'jest-axe'
+import 'jest-axe/extend-expect'
+
+function Form() {
+  return (
+    <form>
+      <label htmlFor="email">Email</label>
+      <input id="email" placeholder="email" />
+    </form>
+  )
+}
+
+test('the form is accessible', async () => {
+  let { container } = render(<Form />)
+  let results = await axe(container)
+  expect(results).toHaveNoViolations()
+})
+```
+
+```js
+// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: [
+    '@testing-library/jest-dom/extend-expect',
+    'jest-axe/extend-expect',
+  ],
+}
+```
+
+It's a good idea to mock a module that does **HTTP** requests.
+
+```js
+import { fireEvent, render, waitFor } from '@testing-library/react'
+
+import { GreetingLoader } from '../greeting-loader-01-mocking'
+import { loadGreeting as mockLoadGreeting } from '../api'
+
+jest.mock('../api')
+
+test('loads greetings on click', async () => {
+  let testGreeting = 'TEST_GREETING'
+
+  mockLoadGreeting.mockResolvedValueOnce({
+    data: {
+      greeting: testGreeting,
+    },
+  })
+
+  let { getByLabelText, getByText } = render(<GreetingLoader />)
+
+  let nameInput = getByLabelText(/name/i)
+  let loadButton = getByText(/load/i)
+
+  nameInput.value = 'Mary'
+  fireEvent.click(loadButton)
+
+  expect(mockLoadGreeting).toHaveBeenCalledWith('Mary')
+  expect(mockLoadGreeting).toHaveBeenCalledTimes(1)
+
+  await waitFor(() =>
+    expect(getByLabelText(/greeting/i)).toHaveTextContent(testGreeting)
+  )
+})
+```
+
+It's useful to mock things when you would otherwise have to wait for to finish like animations.
+
+```js
+import { fireEvent, render, waitFor } from '@testing-library/react'
+
+jest.mock('react-transition-group', () => {
+  return {
+    CSSTransition: (props) => (props.in ? props.children : null),
+  }
+})
+
+test('shows hidden message when toggle is clicked', () => {
+  let myMessage = 'hello world'
+  let { getByText, queryByText } = render(
+    <HiddenMessage>{myMessage}</HiddenMessage>
+  )
+
+  let toggleButton = getByText(/toggle/i)
+  expect(queryByText(myMessage)).not.toBeInTheDocument()
+
+  fireEvent.click(toggleButton)
+  expect(getByText(myMessage)).toBeInTheDocument()
+
+  fireEvent.click(toggleButton)
+  expect(queryByText(myMessage)).not.toBeInTheDocument()
+})
+```
+
+Writing your tests ahead of time to drive your code is also known as **test driven development** or the "red, green, refactor" cycle where you first write a failing test and then create code that's necessary to make that test pass.
+
+```js
+import { render } from '@testing-library/react'
+
+test('renders a form with title, content, tags, and a submit button', () => {
+  let { getByLabelText, getByText } = render(<Editor />)
+  getByLabelText(/title/i)
+  getByLabelText(/content/i)
+  getByLabelText(/tags/i)
+  getByText(/submit/i)
+})
+```
