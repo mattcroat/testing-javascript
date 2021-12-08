@@ -724,3 +724,171 @@ test('renders a form with title, content, tags, and a submit button', () => {
   getByText(/submit/i)
 })
 ```
+
+When you have any test data it's a great idea to generate that data.
+
+```shell
+npm i -D test-data-bot
+```
+
+```js
+test('renders a form with title, content, tags, and a submit button', () => {
+  let fakeUser = { id: 'user-1' }
+  let fakePost = {
+    title: 'Test Title',
+    content: 'Test content',
+    tags: ['tag1', 'tag2'],
+  }
+
+  render(<Editor user={fakeUser} />)
+
+  getByLabelText(/title/i).value = fakePost.title
+  getByLabelText(/content/i).value = fakePost.content
+  getByLabelText(/tags/i).value = fakePost.tags.join(', ')
+  getByText(/submit/i)
+})
+```
+
+```js
+import { build, fake, sequence } from 'test-data-bot'
+
+let userBuilder = build('User').fields({
+  id: sequence((s) => `user-${s}`),
+})
+
+let postBuilder = build('Post').fields({
+  title: fake((f) => f.lorem.words()),
+  content: fake((f) => f.lorem.paragraphs().replace(/\r/g, '')),
+  tags: fake((f) => [f.lorem.words(), f.lorem.words(), f.lorem.words()]),
+})
+
+test('renders a form with title, content, tags, and a submit button', async () => {
+  let fakeUser = userBuilder()
+  let fakePost = postBuilder()
+
+  render(<Editor user={fakeUser} />)
+
+  getByLabelText(/title/i).value = fakePost.title
+  getByLabelText(/content/i).value = fakePost.content
+  getByLabelText(/tags/i).value = fakePost.tags.join(', ')
+  getByText(/submit/i)
+})
+```
+
+Simplify your tests by abstracting reusable code.
+
+```js
+function renderEditor() {
+  let fakeUser = userBuilder()
+  let fakePost = postBuilder()
+
+  let utils = render(<Editor user={fakeUser} />)
+
+  utils.getByLabelText(/title/i).value = fakePost.title
+  utils.getByLabelText(/content/i).value = fakePost.content
+  utils.getByLabelText(/tags/i).value = fakePost.tags.join(', ')
+  let submitButton = utils.getByText(/submit/i)
+
+  return {
+    ...utils,
+    submitButton,
+    fakeUser,
+    fakePost,
+  }
+}
+```
+
+Testing routes in your app.
+
+```js
+import { Router } from 'react-router-dom'
+import { createMemoryHistory } from 'history'
+import { fireEvent, render as rtlRender } from '@testing-library/react'
+
+import { Main } from '../main'
+
+function render(
+  ui,
+  {
+    route = '/',
+    history = createMemoryHistory({ initialEntries: [route] }),
+    ...renderOptions
+  } = {}
+) {
+  function Wrapper({ children }) {
+    return <Router history={history}>{children}</Router>
+  }
+
+  return {
+    ...rtlRender(ui, { wrapper: Wrapper, ...renderOptions }),
+    history,
+  }
+}
+
+test('main renders about and home and I can navigate to those pages', () => {
+  let { getByRole, getByText } = render(<Main />)
+
+  expect(getByRole('heading')).toHaveTextContent(/home/i)
+  fireEvent.click(getByText(/about/i))
+  expect(getByRole('heading')).toHaveTextContent(/about/i)
+})
+
+test('landing on a bad page shows no match component', () => {
+  let { getByRole } = render(<Main />, {
+    route: '/something-that-does-not-match',
+  })
+
+  expect(getByRole('heading')).toHaveTextContent(/404/i)
+})
+```
+
+Testing a custom **React** hook.
+
+```js
+import { renderHook, act } from '@testing-library/react-hooks'
+
+test('exposes the count and increment/decrement functions', () => {
+  let { result } = renderHook(useCounter)
+
+  expect(result.current.count).toBe(0)
+
+  act(() => result.current.increment())
+  expect(result.current.count).toBe(1)
+
+  act(() => result.current.decrement())
+  expect(result.current.count).toBe(0)
+})
+
+test('allows customization of the initial count', () => {
+  let { result } = renderHook(useCounter, { initialProps: { initialCount: 3 } })
+  expect(result.current.count).toBe(3)
+})
+
+test('allows customization of the step', () => {
+  let { result } = renderHook(useCounter, { initialProps: { step: 2 } })
+
+  expect(result.current.count).toBe(0)
+
+  act(() => result.current.increment())
+  expect(result.current.count).toBe(2)
+
+  act(() => result.current.decrement())
+  expect(result.current.count).toBe(0)
+})
+
+test('the step can be changed', () => {
+  let { result, rerender } = renderHook(useCounter, {
+    initialProps: { step: 3 },
+  })
+
+  expect(result.current.count).toBe(0)
+
+  act(() => result.current.increment())
+  expect(result.current.count).toBe(3)
+
+  rerender({ step: 2 })
+
+  act(() => result.current.decrement())
+  expect(result.current.count).toBe(1)
+})
+```

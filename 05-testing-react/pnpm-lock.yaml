@@ -12,6 +12,7 @@ specifiers:
   '@testing-library/user-event': ^13.5.0
   '@vitejs/plugin-react': ^1.0.7
   babel-jest: ^27.4.2
+  history: ^5.1.0
   jest: ^27.4.3
   jest-axe: ^5.0.1
   msw: ^0.36.0
@@ -22,6 +23,7 @@ specifiers:
   react-router-dom: ^6.0.2
   react-test-renderer: ^17.0.2
   react-transition-group: ^4.4.2
+  test-data-bot: ^0.8.0
   vite: ^2.7.0
 
 dependencies:
@@ -44,10 +46,12 @@ devDependencies:
   '@testing-library/user-event': 13.5.0_@testing-library+dom@8.11.1
   '@vitejs/plugin-react': 1.1.1
   babel-jest: 27.4.2_@babel+core@7.16.0
+  history: 5.1.0
   jest: 27.4.3
   jest-axe: 5.0.1
   msw: 0.36.0
   react-test-renderer: 17.0.2_react@17.0.2
+  test-data-bot: 0.8.0
   vite: 2.7.0
 
 packages:
@@ -2690,6 +2694,10 @@ packages:
       tmp: 0.0.33
     dev: true
 
+  /faker/4.1.0:
+    resolution: {integrity: sha1-HkW7vsxndLPBlfrSg1EJxtdIzD8=}
+    dev: true
+
   /fast-json-stable-stringify/2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
     dev: true
@@ -2845,7 +2853,6 @@ packages:
     resolution: {integrity: sha512-zPuQgPacm2vH2xdORvGGz1wQMuHSIB56yNAy5FnLuwOwgSYyPKptJtcMm6Ev+hRGeS+GzhbmRacHzvlESbFwDg==}
     dependencies:
       '@babel/runtime': 7.16.3
-    dev: false
 
   /hoist-non-react-statics/3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
@@ -4518,6 +4525,13 @@ packages:
     dependencies:
       ansi-escapes: 4.3.2
       supports-hyperlinks: 2.2.0
+    dev: true
+
+  /test-data-bot/0.8.0:
+    resolution: {integrity: sha512-IFeWrb8PCV1sEyzYf1dgtRciBe3tw1Mr9Wj2o/ldEXofXma3hZiFCeBynb3DnVWxk6r1u/149qQ1it8ZzUTI0A==}
+    engines: {node: '>=8.10.0'}
+    dependencies:
+      faker: 4.1.0
     dev: true
 
   /test-exclude/6.0.0:

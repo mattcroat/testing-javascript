@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -27,10 +28,12 @@
     "@testing-library/user-event": "^13.5.0",
     "@vitejs/plugin-react": "^1.0.7",
     "babel-jest": "^27.4.2",
+    "history": "^5.1.0",
     "jest": "^27.4.3",
     "jest-axe": "^5.0.1",
     "msw": "^0.36.0",
     "react-test-renderer": "^17.0.2",
+    "test-data-bot": "^0.8.0",
     "vite": "^2.7.0"
   }
 }
