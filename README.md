@@ -892,3 +892,92 @@ test('the step can be changed', () => {
   expect(result.current.count).toBe(1)
 })
 ```
+
+Testing a **React** modal.
+
+```js
+import { render, queries } from '@testing-library/react'
+
+test('modal shows the children', () => {
+  let { getByTestId } = render(
+    <>
+      <div data-testid="foo" />
+      <Modal>
+        <div data-testid="test" />
+      </Modal>
+    </>,
+    { baseElement: document.getElementById('modal-root') }
+  )
+
+  queries.getByTestId(document.body, 'foo')
+  expect(getByTestId('test')).toBeInTheDocument()
+})
+```
+
+Testing unmounting a **React** component with a fake timer.
+
+```js
+import { render, act } from '@testing-library/react'
+
+beforeAll(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {})
+})
+
+afterAll(() => {
+  console.error.mockRestore()
+})
+
+afterEach(() => {
+  jest.clearAllMocks()
+  jest.useRealTimers()
+})
+
+test('does not attempt to set state when unmounted (to prevent memory leaks)', () => {
+  jest.useFakeTimers()
+
+  let { unmount } = render(<Countdown />)
+  unmount()
+  act(() => jest.runOnlyPendingTimers())
+  expect(console.error).not.toHaveBeenCalled()
+})
+```
+
+Writing **integration** tests.
+
+```js
+import { render, screen } from '@testing-library/react'
+
+import user from '@testing-library/user-event'
+import { submitForm as mockSubmitForm } from '../api'
+import App from '../app'
+
+jest.mock('../api')
+
+test('Can fill out a form across multiple pages', async () => {
+  mockSubmitForm.mockResolvedValueOnce({ success: true })
+  const testData = { food: 'test food', drink: 'test drink' }
+  render(<App />)
+
+  user.click(await screen.findByText(/fill.*form/i))
+
+  user.type(await screen.findByLabelText(/food/i), testData.food)
+  user.click(await screen.findByText(/next/i))
+
+  user.type(await screen.findByLabelText(/drink/i), testData.drink)
+  user.click(await screen.findByText(/review/i))
+
+  expect(await screen.findByLabelText(/food/i)).toHaveTextContent(testData.food)
+  expect(await screen.findByLabelText(/drink/i)).toHaveTextContent(
+    testData.drink
+  )
+
+  user.click(await screen.findByText(/confirm/i, { selector: 'button' }))
+
+  expect(mockSubmitForm).toHaveBeenCalledWith(testData)
+  expect(mockSubmitForm).toHaveBeenCalledTimes(1)
+
+  user.click(await screen.findByText(/home/i))
+
+  expect(await screen.findByText(/welcome home/i)).toBeInTheDocument()
+})
+```
